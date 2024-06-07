@@ -1,0 +1,223 @@
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+--- !ruby/object:Api::Resource
+name: 'NotebookRuntimeTemplate'
+description: |
+  Create a Notebook Runtime Template for Colab Enterprise notebooks
+references: !ruby/object:Api::Resource::ReferenceLinks
+  guides:
+    'Create a runtime template': 'https://cloud.google.com/vertex-ai/docs/colab/create-runtime-template'
+  api: 'https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.notebookRuntimeTemplates'
+base_url: 'projects/{{project}}/locations/{{location}}/notebookRuntimeTemplates'
+self_link: 'projects/{{project}}/locations/{{location}}/notebookRuntimeTemplates/{{name}}'
+create_url: 'projects/{{project}}/locations/{{location}}/notebookRuntimeTemplates?notebookRuntimeTemplateId={{name}}'
+# No Patch method has been defined for NotebookRuntimeTemplate
+immutable: true
+create_verb: :POST
+iam_policy: !ruby/object:Api::Resource::IamPolicy
+  method_name_separator: ':'
+  fetch_iam_policy_verb: :POST
+  parent_resource_attribute: 'name'
+  allowed_iam_role: 'roles/aiplatform.colabEnterpriseUser'
+  import_format: [
+    'projects/{{project}}/locations/{{location}}/notebookRuntimeTemplates/{{name}}',
+    '{{name}}'
+  ]
+examples:
+  - !ruby/object:Provider::Terraform::Examples
+    name: 'vertex_ai_notebook_runtime_template_basic'
+    primary_resource_id: 'default'
+    primary_resource_name: 'fmt.Sprintf("runtime%s", context["random_suffix"])'
+    vars:
+      template_name: 'runbook-template'
+  - !ruby/object:Provider::Terraform::Examples
+    name: 'vertex_ai_notebook_runtime_template_full'
+    primary_resource_id: 'default'
+    primary_resource_name: 'fmt.Sprintf("runtime-%s, context["random_suffix])'
+    vars:
+      template_name: 'runbook-template'
+autogen_async: false
+properties:
+  - !ruby/object:Api::Type::String
+    name: "name"
+    description: |
+      Name of the Runtime Template.
+    output: true
+  - !ruby/object:Api::Type::String
+    name: "displayName"
+    description: |
+      Display name of the Notebook Runtime Template
+    required: true
+  - !ruby/object:Api::Type::String
+    name: "description"
+    description: |
+      Description of the Notebook Runtime Template
+  - !ruby/object:Api::Type::Boolean
+    name: "isDefault"
+    output: true
+    description: |
+      The default template to use if not specified.
+  - !ruby/object:Api::Type::String
+    name: "location"
+    immutable: true
+    required: true
+    url_param_only: true
+    description: |
+      The location where the runtime template should be created.
+  - !ruby/object:Api::Type::NestedObject
+    name: "machineSpec"
+    description: |
+      The specification of a single machine for the template.
+    immutable: true
+    properties:
+      - !ruby/object:Api::Type::String
+        name: "machineType"
+        immutable: true
+        required: true
+        description: |
+          The type of the machine.
+      - !ruby/object:Api::Type::Enum
+        name: "acceleratorType"
+        description: |
+          Represents a hardware accelerator type.
+        immutable: true
+        values:
+          - :ACCELERATOR_TYPE_UNSPECIFIED
+          - :NVIDIA_TESLA_K80
+          - :NVIDIA_TESLA_P100
+          - :NVIDIA_TESLA_V100
+          - :NVIDIA_TESLA_P4
+          - :NVIDIA_TESLA_T4
+          - :NVIDIA_TESLA_A100
+          - :NVIDIA_A100_80GB
+          - :NVIDIA_L4
+          - :NVIDIA_H100_80GB
+          - :TPU_V2
+          - :TPU_V3
+          - :TPU_V4_POD
+      - !ruby/object:Api::Type::Integer
+        name: "acceleratorCount"
+        description: |
+          The number of accelerators to attach to the machine.
+      - !ruby/object:Api::Type::String
+        name: "tpuTopology"
+        description: |
+          The topology of the TPUs. Corresponds to the TPU topologies
+          available from GKE. (Example: tpuTopology: "2x2x1").
+        immutable: true
+  - !ruby/object:Api::Type::NestedObject
+    name: "dataPersistentDiskSpec"
+    description: |
+      Represents the spec of persistent disk.
+    properties:
+      - !ruby/object:Api::Type::String
+        name: "diskType"
+        description: |
+          type of the disk.
+        default_value: "pd-standard"
+      - !ruby/object:Api::Type::String
+        name: "diskSizeGb"
+        description: |
+          size in GB of the disk (default is 100GB).
+  - !ruby/object:Api::Type::NestedObject
+    name: "networkSpec"
+    description: |
+      Network spec.
+    properties:
+      - !ruby/object:Api::Type::Boolean
+        name: "enableInternetAccess"
+        description: |
+          Whether to enable public internet access.  If set to false, ensure that private google access is
+          enabled on the subnet.
+        default_value: true
+      - !ruby/object:Api::Type::String
+        name: "network"
+        description: |
+          The full name of the Google Compute Engine network.
+      - !ruby/object:Api::Type::String
+        name: "subnetwork"
+        description: |
+          The name of the subnet that this instance is in.
+          Format: projects/{project_id_or_number}/regions/{region}/subnetworks/{subnetwork_id}
+  - !ruby/object:Api::Type::String
+    name: "serviceAccount"
+    description: |
+      The service account that the runtime workload runs as.
+      You can use any service account within the same project,
+      but you must have the service account user permission to
+      use the instance.
+
+      If not specified, the Compute Engine default service account is used.
+  - !ruby/object:Api::Type::Fingerprint
+    name: "etag"
+    description: |
+      Checksum computed by the server.
+      May be sent on update and delete requests
+      to ensure that the client has an up-to-date
+      value before proceeding.
+  - !ruby/object:Api::Type::KeyValueLabels
+    name: "labels"
+    description: |
+      The labels with user-defined metadata to organize the NotebookRuntimeTemplates.
+  - !ruby/object:Api::Type::NestedObject
+    name: "idleShutdownConfig"
+    description: |
+      The idle shutdown configuration of NotebookRuntimeTemplate.
+      This config will only be set when idle shutdown is enabled.
+    properties:
+      - !ruby/object:Api::Type::String
+        name: "idleTimeout"
+        description: |
+          Duration is accurate to the second. In Notebook,
+          Idle Timeout is accurate to minute so the range
+          of idleTimeout (second) is: 10 * 60 ~ 1440 * 60.
+        required: true
+      - !ruby/object:Api::Type::Boolean
+        name: "idleShutdownDisabled"
+        description: |
+          Whether Idle Shutdown is disabled in this NotebookRuntimeTemplate.
+  - !ruby/object:Api::Type::NestedObject
+    name: "eucConfig"
+    description: |
+      EUC configuration of the NotebookRuntimeTemplate.
+    properties:
+      - !ruby/object:Api::Type::Boolean
+        name: "eucDisabled"
+        description: |
+          Whether EUC is disabled in this NotebookRuntimeTemplate.
+      - !ruby/object:Api::Type::Boolean
+        name: "bypassActasCheck"
+        description: |
+          Whether ActAs check is bypassed for service account attached to the VM.
+        output: true
+  - !ruby/object:Api::Type::Time
+    name: "createTime"
+    description: |
+      Time when this resource was created.
+    output: true
+  - !ruby/object:Api::Type::Time
+    name: "updateTime"
+    description: |
+      Time when the resource was last updated.
+    output: true
+  - !ruby/object:Api::Type::Enum
+    name: "notebookRuntimeType"
+    description: |
+      The type of the notebook runtime template.
+    immutable: true
+    values:
+      - :NOTEBOOK_RUNTIME_TYPE_UNSPECIFIED
+      - :USER_DEFINED
+      - :ONE_CLICK
