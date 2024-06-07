@@ -20,9 +20,9 @@ references: !ruby/object:Api::Resource::ReferenceLinks
   guides:
     'Create a runtime template': 'https://cloud.google.com/vertex-ai/docs/colab/create-runtime-template'
   api: 'https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.notebookRuntimeTemplates'
-base_url: 'projects/{{project}}/locations/{{location}}/notebookRuntimeTemplates'
-self_link: 'projects/{{project}}/locations/{{location}}/notebookRuntimeTemplates/{{name}}'
-create_url: 'projects/{{project}}/locations/{{location}}/notebookRuntimeTemplates?notebookRuntimeTemplateId={{name}}'
+base_url: 'projects/{{project}}/locations/{{region}}/notebookRuntimeTemplates'
+self_link: 'projects/{{project}}/locations/{{region}}/notebookRuntimeTemplates/{{name}}'
+create_url: 'projects/{{project}}/locations/{{region}}/notebookRuntimeTemplates?notebookRuntimeTemplateId={{name}}'
 # No Patch method has been defined for NotebookRuntimeTemplate
 immutable: true
 create_verb: :POST
@@ -32,7 +32,7 @@ iam_policy: !ruby/object:Api::Resource::IamPolicy
   parent_resource_attribute: 'name'
   allowed_iam_role: 'roles/aiplatform.colabEnterpriseUser'
   import_format: [
-    'projects/{{project}}/locations/{{location}}/notebookRuntimeTemplates/{{name}}',
+    'projects/{{project}}/locations/{{region}}/notebookRuntimeTemplates/{{name}}',
     '{{name}}'
   ]
 examples:
@@ -49,17 +49,31 @@ examples:
     vars:
       template_name: 'runbook-template'
 autogen_async: false
-properties:
+async: !ruby/object:Api::OpAsync
+  #include_project: true
+  operation: !ruby/object:Api::OpAsync::Operation
+    base_url: '{{op_id}}'
+  result: !ruby/object:Api::OpAsync::Result
+    resource_inside_response: true
+parameters:
+  - !ruby/object:Api::Type::String
+    name: "region"
+    required: true
+    url_param_only: true
+    description: |
+      The region where the runtime template should be created.
   - !ruby/object:Api::Type::String
     name: "name"
+    output: true
+    custom_flatten: templates/terraform/custom_flatten/name_from_self_link.erb
     description: |
       Name of the Runtime Template.
-    output: true
+properties:
   - !ruby/object:Api::Type::String
     name: "displayName"
+    required: true
     description: |
       Display name of the Notebook Runtime Template
-    required: true
   - !ruby/object:Api::Type::String
     name: "description"
     description: |
@@ -69,32 +83,21 @@ properties:
     output: true
     description: |
       The default template to use if not specified.
-  - !ruby/object:Api::Type::String
-    name: "location"
-    immutable: true
-    required: true
-    url_param_only: true
-    description: |
-      The location where the runtime template should be created.
   - !ruby/object:Api::Type::NestedObject
     name: "machineSpec"
+    default_from_api: true
     description: |
       The specification of a single machine for the template.
-    immutable: true
     properties:
       - !ruby/object:Api::Type::String
         name: "machineType"
-        immutable: true
-        required: true
         description: |
           The type of the machine.
       - !ruby/object:Api::Type::Enum
         name: "acceleratorType"
         description: |
           Represents a hardware accelerator type.
-        immutable: true
         values:
-          - :ACCELERATOR_TYPE_UNSPECIFIED
           - :NVIDIA_TESLA_K80
           - :NVIDIA_TESLA_P100
           - :NVIDIA_TESLA_V100
@@ -116,32 +119,35 @@ properties:
         description: |
           The topology of the TPUs. Corresponds to the TPU topologies
           available from GKE. (Example: tpuTopology: "2x2x1").
-        immutable: true
   - !ruby/object:Api::Type::NestedObject
     name: "dataPersistentDiskSpec"
+    required: true
+    default_from_api: true
     description: |
       Represents the spec of persistent disk.
     properties:
       - !ruby/object:Api::Type::String
         name: "diskType"
+        default_value: "pd-standard"
         description: |
           type of the disk.
-        default_value: "pd-standard"
       - !ruby/object:Api::Type::String
         name: "diskSizeGb"
+        default_value: "100"
         description: |
           size in GB of the disk (default is 100GB).
   - !ruby/object:Api::Type::NestedObject
     name: "networkSpec"
+    required: true
     description: |
       Network spec.
     properties:
       - !ruby/object:Api::Type::Boolean
         name: "enableInternetAccess"
+        default_value: false
         description: |
           Whether to enable public internet access.  If set to false, ensure that private google access is
           enabled on the subnet.
-        default_value: true
       - !ruby/object:Api::Type::String
         name: "network"
         description: |
@@ -173,6 +179,7 @@ properties:
       The labels with user-defined metadata to organize the NotebookRuntimeTemplates.
   - !ruby/object:Api::Type::NestedObject
     name: "idleShutdownConfig"
+    default_from_api: true
     description: |
       The idle shutdown configuration of NotebookRuntimeTemplate.
       This config will only be set when idle shutdown is enabled.
@@ -180,16 +187,15 @@ properties:
       - !ruby/object:Api::Type::String
         name: "idleTimeout"
         description: |
-          Duration is accurate to the second. In Notebook,
-          Idle Timeout is accurate to minute so the range
-          of idleTimeout (second) is: 10 * 60 ~ 1440 * 60.
-        required: true
+          A duration in seconds with up to nine fractional digits,
+          ending with s. Example: "3.5s".
       - !ruby/object:Api::Type::Boolean
         name: "idleShutdownDisabled"
         description: |
           Whether Idle Shutdown is disabled in this NotebookRuntimeTemplate.
   - !ruby/object:Api::Type::NestedObject
     name: "eucConfig"
+    default_from_api: true
     description: |
       EUC configuration of the NotebookRuntimeTemplate.
     properties:
@@ -216,8 +222,17 @@ properties:
     name: "notebookRuntimeType"
     description: |
       The type of the notebook runtime template.
-    immutable: true
+    default_value: :USER_DEFINED
     values:
-      - :NOTEBOOK_RUNTIME_TYPE_UNSPECIFIED
       - :USER_DEFINED
       - :ONE_CLICK
+  - !ruby/object:Api::Type::NestedObject
+    name: "shieldedVmConfig"
+    default_from_api: true
+    description: |
+      Shielded Instance options of the NotebookRuntimeTemplate
+    properties:
+      - !ruby/object:Api::Type::Boolean
+        name: "enableSecureBoot"
+        description: |
+          Defines whether the instance has Secure Boot enabled.
