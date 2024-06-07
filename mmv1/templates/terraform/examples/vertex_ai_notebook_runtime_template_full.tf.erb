@@ -1,0 +1,52 @@
+resource "google_compute_network" "default" {
+  name                    = "<%= ctx[:vars]['template_name'] %>"
+  auto_create_subnetworks = false
+}
+
+resource "google_compute_subnetwork" "default" {
+  name                      = "<%= ctx[:vars]['template_name'] %>"
+  ip_cidr_range             = "10.0.0.0/24"
+  region                    = "us-central1"
+  network                   = google_compute_network.default.name
+  private_ip_google_access  = true
+}
+
+resource "google_service_account" "instance_identity" {
+  account_id  = "runtime-identity"
+  description = "Service account attached to the Runtime instances"
+}
+
+resource "google_vertex_ai_notebook_runtime_template" "<%= ctx[:primary_resource_id] %>" {
+  display_name          = "<%= ctx[:vars]['template_name'] %>"
+  description           = "Runtime template"
+  location              = "us-central1"
+  service_account       = google_service_account.instance_identity.email
+  notebook_runtime_type = "USER_DEFINED"
+
+  labels = {
+    label-one = "value-one"
+  }
+
+  network_spec {
+    enable_internet_access  = false
+    network                 = google_compute_network.default.id
+    subnetwork              = google_compute_subnetwork.default.id
+  }
+
+  machine_spec {
+    machine_type      = "n1-standard-16"
+    accelerator_type  = "NVIDIA_TESLA_T4"
+    accelerator_count = 1
+  }
+
+  data_persistent_disk_spec {
+    disk_type     = "pd-standard"
+    disk_size_gb  = 50
+  }
+
+  idle_shutdown_config {
+    idle_timeout            = "1800s"
+    idle_shutdown_disabled  = false
+  }
+
+}

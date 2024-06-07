@@ -1,0 +1,31 @@
+resource "google_compute_network" "default" {
+  name                    = "<%= ctx[:vars]['template_name'] %>"
+  auto_create_subnetworks = false
+}
+
+resource "google_compute_subnetwork" "default" {
+  name                      = "<%= ctx[:vars]['template_name'] %>"
+  ip_cidr_range             = "10.0.0.0/24"
+  region                    = "us-central1"
+  network                   = google_compute_network.default.name
+  private_ip_google_access  = true
+}
+
+resource "google_vertex_ai_notebook_runtime_template" "<%= ctx[:primary_resource_id] %>" {
+  display_name  = "<%= ctx[:vars]['template_name'] %>"
+  location      = "us-central1"
+
+  labels = {
+    label-one = "value-one"
+  }
+
+  network_spec {
+    enable_internet_access  = false
+    network                 = google_compute_network.default.id
+    subnetwork              = google_compute_subnetwork.default.id
+  }
+
+  machine_spec {
+    machine_type = "e2-standard-4"
+  }
+}
