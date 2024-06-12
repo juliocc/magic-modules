@@ -16,7 +16,7 @@ resource "google_service_account" "instance_identity" {
   description = "Service account attached to the Runtime instances"
 }
 
-resource "google_vertex_ai_notebook_runtime_template" "<%= ctx[:primary_resource_id] %>" {
+resource "google_vertex_colab_notebook_runtime_template" "<%= ctx[:primary_resource_id] %>" {
   display_name          = "<%= ctx[:vars]['template_name'] %>"
   description           = "Runtime template"
   location              = "us-central1"
