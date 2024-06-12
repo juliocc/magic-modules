@@ -60,7 +60,7 @@ async: !ruby/object:Api::OpAsync
   #     - false
 examples:
   - !ruby/object:Provider::Terraform::Examples
-    name: 'vertex_ai_notebook_runtime_basic'
+    name: 'vertex_ai_colab_runtime_basic'
     primary_resource_id: 'default'
     primary_resource_name: 'fmt.Sprintf("runtime-%s, context["random_suffix"])'
     vars:

@@ -11,7 +11,7 @@ resource "google_compute_subnetwork" "default" {
   private_ip_google_access  = true
 }
 
-resource "google_vertex_ai_notebook_runtime_template" "<%= ctx[:primary_resource_id] %>" {
+resource "google_vertex_ai_colab_runtime_template" "<%= ctx[:primary_resource_id] %>" {
   display_name  = "<%= ctx[:vars]['template_name'] %>"
   location      = "us-central1"
 

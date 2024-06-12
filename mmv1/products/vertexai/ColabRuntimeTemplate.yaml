@@ -37,13 +37,13 @@ iam_policy: !ruby/object:Api::Resource::IamPolicy
   ]
 examples:
   - !ruby/object:Provider::Terraform::Examples
-    name: 'vertex_ai_notebook_runtime_template_basic'
+    name: 'vertex_ai_colab_runtime_template_basic'
     primary_resource_id: 'default'
     primary_resource_name: 'fmt.Sprintf("runtime%s", context["random_suffix"])'
     vars:
       template_name: 'runbook-template'
   - !ruby/object:Provider::Terraform::Examples
-    name: 'vertex_ai_notebook_runtime_template_full'
+    name: 'vertex_ai_colab_runtime_template_full'
     primary_resource_id: 'default'
     primary_resource_name: 'fmt.Sprintf("runtime-%s, context["random_suffix])'
     vars:
