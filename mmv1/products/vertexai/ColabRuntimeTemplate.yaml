@@ -13,7 +13,7 @@
 # limitations under the License.
 
 --- !ruby/object:Api::Resource
-name: 'NotebookRuntimeTemplate'
+name: 'ColabRuntimeTemplate'
 description: |
   Create a Notebook Runtime Template for Colab Enterprise notebooks
 references: !ruby/object:Api::Resource::ReferenceLinks
