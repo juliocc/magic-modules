@@ -1,0 +1,13 @@
+// get notebookRuntimeTemplateRef and remove it from obj
+templateRef := obj["notebookRuntimeTemplateRef"].(map[string]interface{})
+delete(obj, "notebookRuntimeTemplateRef")
+
+// move all fields under notebookRuntime
+wrappedReq := map[string]interface{}{
+	"notebookRuntime": obj,
+}
+
+// add tempalte ref to outer request object
+wrappedReq["notebookRuntimeTemplate"] = templateRef["notebookRuntimeTemplate"].(string)
+
+return wrappedReq, nil

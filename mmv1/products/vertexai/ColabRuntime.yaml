@@ -26,11 +26,12 @@ self_link: 'projects/{{project}}/locations/{{region}}/notebookRuntimes/{{name}}'
 create_url: 'projects/{{project}}/locations/{{region}}/notebookRuntimes:assign'
 identity: ['name']
 immutable: true
+custom_code: !ruby/object:Provider::Terraform::CustomCode
+  encoder: templates/terraform/encoders/colab_runtime.go.erb
 async: !ruby/object:Api::OpAsync
   actions:
     - create
     - delete
-    - update
   operation: !ruby/object:Api::OpAsync::Operation
     path: 'name'
     base_url: '{{op_id}}'
@@ -44,20 +45,6 @@ async: !ruby/object:Api::OpAsync
     allowed:
       - true
       - false
-
-
-  # #include_project: true
-  # operation: !ruby/object:Api::OpAsync::Operation
-  #   path: 'name'
-  #   base_url: '{{op_id}}'
-  # # result: !ruby/object:Api::OpAsync::Result
-  # #   resource_inside_response: true
-  # status: !ruby/object:Api::OpAsync::Status
-  #   path: 'done'
-  #   complete: true
-  #   allowed:
-  #     - true
-  #     - false
 examples:
   - !ruby/object:Provider::Terraform::Examples
     name: 'vertex_ai_colab_runtime_basic'
@@ -80,117 +67,104 @@ parameters:
       Name of the Runtime Template.
 properties:
   - !ruby/object:Api::Type::String
-    name: 'notebookRuntimeTemplate'
-    # TODO: reuse?
+    name: 'runtimeUser'
     description: |
-      The resource name of the NotebookRuntimeTemplate based on which a NotebookRuntime will be assigned (reuse or create a new one).
+      The user email of the NotebookRuntime
+    required: true
+  - !ruby/object:Api::Type::NestedObject
+    name: 'notebookRuntimeTemplateRef'
+    immutable: true
+    required: true
+    description: |
+      The pointer to the NotebookRuntimeTemplate this NotebookRuntime is created from
+    properties:
+      - !ruby/object:Api::Type::String
+        name: 'notebookRuntimeTemplate'
+        description: |
+          A resource name of the NotebookRuntimeTemplate
+        diff_suppress_func: tpgresource.ProjectNumberDiffSuppress
+        immutable: true
+        required: true
+  - !ruby/object:Api::Type::String
+    name: 'proxyUri'
+    description: |
+      The proxy endpoint used to access the NotebookRuntime
+    output: true
+  - !ruby/object:Api::Type::Time
+    name: 'createTime'
+    description: |
+      Timestamp when this notebook runtime was created
+    output: true
+  - !ruby/object:Api::Type::Time
+    name: 'updateTime'
+    description: |
+      Timestamp when this notebook runtime was recently updated
+    output: true
+  - !ruby/object:Api::Type::Enum
+    name: 'healthState'
+    description: |
+      The health state of the notebook runtime
+    output: true
+    values:
+      - :HEALTHY
+      - :UNHEALTHY
+  - !ruby/object:Api::Type::String
+    name: 'displayName'
+    description: |
+      The display name of the notebook runtime
     required: true
   - !ruby/object:Api::Type::String
-    name: 'notebookRuntimeId'
-    # TODO: reuse?
+    name: 'description'
     description: |
-      User specified ID for the notebook runtime.
-
-  - !ruby/object:Api::Type::NestedObject
-    name: 'notebookRuntime'
+      The description of the notebook runtime
+  - !ruby/object:Api::Type::String
+    name: 'serviceAccount'
     description: |
-      runtime specific information (e.g. runtime owner, notebook id) used for NotebookRuntime assignment.
-    properties:    
-      - !ruby/object:Api::Type::String
-        name: 'runtimeUser'
-        description: |
-          The user email of the NotebookRuntime
-        required: true
-      - !ruby/object:Api::Type::NestedObject
-        name: 'notebookRuntimeTemplateRef'
-        description: |
-          The pointer to the NotebookRuntimeTemplate this NotebookRuntime is created from
-        properties:
-          - !ruby/object:Api::Type::String
-            name: 'notebookRuntimeTemplate'
-            description: |
-              A resource name of the NotebookRuntimeTemplate
-            immutable: true
-      - !ruby/object:Api::Type::String
-        name: 'proxyUri'
-        description: |
-          The proxy endpoint used to access the NotebookRuntime
-      - !ruby/object:Api::Type::Time
-        name: 'createTime'
-        description: |
-          Timestamp when this notebook runtime was created
-        output: true
-      - !ruby/object:Api::Type::Time
-        name: 'updateTime'
-        description: |
-          Timestamp when this notebook runtime was recently updated
-        output: true
-      - !ruby/object:Api::Type::Enum
-        name: 'healthState'
-        description: |
-          The health state of the notebook runtime
-        output: true
-        values:
-          - :HEALTHY
-          - :UNHEALTHY
-      - !ruby/object:Api::Type::String
-        name: 'displayName'
-        description: |
-          The display name of the notebook runtime
-        required: true
-      - !ruby/object:Api::Type::String
-        name: 'description'
-        description: |
-          The description of the notebook runtime
-      - !ruby/object:Api::Type::String
-        name: 'serviceAccount'
-        description: |
-          The service account that the notebook runtime workload runs as
-        output: true
-      - !ruby/object:Api::Type::Enum
-        name: 'runtimeState'
-        description: |
-          The runtime (instance) state of the notebook runtime
-        output: true
-        values:
-          - :RUNNING
-          - :BEING_STARTED
-          - :BEING_STOPPED
-          - :STOPPED
-          - :BEING_UPGRADED
-          - :ERROR
-          - :INVALID
-      - !ruby/object:Api::Type::Boolean
-        name: 'isUpgradable'
-        description: |
-          Whether the notebook runtime is upgradable
-        output: true
-      # - !ruby/object:Api::Type::KeyValueLabels
-      #   name: 'labels'
-      #   description: |
-      #     The labels with user-defined metadata to organize your notebook runtime
-      - !ruby/object:Api::Type::Time
-        name: 'expirationTime'
-        description: |
-          Timestamp when the notebook runtime will be expired
-        output: true
-      - !ruby/object:Api::Type::String
-        name: 'version'
-        description: |
-          The VM OS image version of the notebook runtime
-        output: true
-      - !ruby/object:Api::Type::Enum
-        name: 'notebookRuntimeType'
-        description: |
-          The type of the notebook runtime
-        output: true
-        values:
-          - :USER_DEFINED
-          - :ONE_CLICK
-      - !ruby/object:Api::Type::Array
-        name: 'networkTags'
-        description: |
-          The Compute Engine tags to add to the runtime
-        item_type: Api::Type::String
-
-
+      The service account that the notebook runtime workload runs as
+    output: true
+  - !ruby/object:Api::Type::Enum
+    name: 'runtimeState'
+    description: |
+      The runtime (instance) state of the notebook runtime
+    output: true
+    values:
+      - :RUNNING
+      - :BEING_STARTED
+      - :BEING_STOPPED
+      - :STOPPED
+      - :BEING_UPGRADED
+      - :ERROR
+      - :INVALID
+  - !ruby/object:Api::Type::Boolean
+    name: 'isUpgradable'
+    description: |
+      Whether the notebook runtime is upgradable
+    output: true
+  # - !ruby/object:Api::Type::KeyValueLabels
+  #   name: 'labels'
+  #   default_from_api: true
+  #   description: |
+  #     The labels with user-defined metadata to organize your notebook runtime
+  - !ruby/object:Api::Type::Time
+    name: 'expirationTime'
+    description: |
+      Timestamp when the notebook runtime will be expired
+    output: true
+  - !ruby/object:Api::Type::String
+    name: 'version'
+    description: |
+      The VM OS image version of the notebook runtime
+    output: true
+  - !ruby/object:Api::Type::Enum
+    name: 'notebookRuntimeType'
+    description: |
+      The type of the notebook runtime
+    output: true
+    values:
+      - :USER_DEFINED
+      - :ONE_CLICK
+  - !ruby/object:Api::Type::Array
+    name: 'networkTags'
+    description: |
+      The Compute Engine tags to add to the runtime
+    item_type: Api::Type::String
