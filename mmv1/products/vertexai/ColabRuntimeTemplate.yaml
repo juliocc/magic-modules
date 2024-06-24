@@ -236,3 +236,20 @@ properties:
         name: "enableSecureBoot"
         description: |
           Defines whether the instance has Secure Boot enabled.
+  - !ruby/object:Api::Type::NestedObject
+    name: 'encryptionSpec'
+    description: |
+      Customer-managed encryption key spec for an Endpoint. If set, this
+      Endpoint and all sub-resources of this Endpoint will be secured by this
+      key.
+    properties:
+      - !ruby/object:Api::Type::String
+        name: 'kmsKeyName'
+        description: |
+          Required. The Cloud KMS resource identifier of the customer managed
+          encryption key used to protect a resource. Has the form:
+          `projects/my-project/locations/my-region/keyRings/my-kr/cryptoKeys/my-key`.
+          The key needs to be in the same region as where the compute resource
+          is created.
+        required: true
+        immutable: true
