@@ -2850,13 +2850,9 @@ func resourceComputeInstanceUpdate(d *schema.ResourceData, meta interface{}) err
 	}
 
 	if d.HasChange("boot_disk") {
-		//default behavior for the disk is to have the same name as the instance
-		diskName := instance.Name
-		if v := tpgresource.GetResourceNameFromSelfLink(d.Get("boot_disk.0.source").(string)); v != diskName {
-			diskName = v
-		}
+		diskUri := d.Get("boot_disk.0.source").(string)
 
-		disk, err := config.NewComputeClient(userAgent).Disks.Get(project, zone, diskName).Do()
+		disk, err := getDisk(diskUri, d, config)
 		if err != nil {
 			return fmt.Errorf("Error getting boot disk: %s", err)
 		}
@@ -2864,10 +2860,19 @@ func resourceComputeInstanceUpdate(d *schema.ResourceData, meta interface{}) err
 		obj := make(map[string]interface{})
 
 		if d.HasChange("boot_disk.0.initialize_params") {
+			var locationType, location string
+			if disk.Region != "" {
+				locationType = "regions"
+				location = tpgresource.GetResourceNameFromSelfLink(disk.Region)
+			} else {
+				locationType = "zones"
+				location = tpgresource.GetResourceNameFromSelfLink(disk.Zone)
+			}
+			urlBase := fmt.Sprintf("{{"{{"}}ComputeBasePath{{"}}"}}projects/%s/%s/%s/disks/%s", project, locationType, location, disk.Name)
+
 			if d.HasChange("boot_disk.0.initialize_params.0.size") {
 				obj["sizeGb"] = d.Get("boot_disk.0.initialize_params.0.size").(int)
-				url := "{{"{{"}}ComputeBasePath{{"}}"}}projects/{{"{{"}}project{{"}}"}}/zones/{{"{{"}}zone{{"}}"}}/disks/{{"{{"}}name{{"}}"}}/resize"
-				err := updateDisk(d, config, userAgent, project, url, obj)
+				err := updateDisk(d, config, userAgent, project, urlBase+"/resize", obj)
 				if err != nil {
 					return err
 				}
@@ -2875,8 +2880,7 @@ func resourceComputeInstanceUpdate(d *schema.ResourceData, meta interface{}) err
 			if d.HasChange("boot_disk.0.initialize_params.0.labels") {
 				obj["labels"] = tpgresource.ConvertStringMap(d.Get("boot_disk.0.initialize_params.0.labels").(map[string]interface{}))
 				obj["labelFingerprint"] = disk.LabelFingerprint
-				url := "{{"{{"}}ComputeBasePath{{"}}"}}projects/{{"{{"}}project{{"}}"}}/zones/{{"{{"}}zone{{"}}"}}/disks/{{"{{"}}name{{"}}"}}/setLabels"
-				err := updateDisk(d, config, userAgent, project, url, obj)
+				err := updateDisk(d, config, userAgent, project, urlBase+"/setLabels", obj)
 				if err != nil {
 					return err
 				}
